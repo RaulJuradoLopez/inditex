@@ -19,7 +19,7 @@ public class ProductServiceImpl implements ProductService{
      */
 
     //Hashtable
-    Map<Product, Product> normalMap = new Hashtable<Product, Product>();
+    Map<String, Product> normalMap = new Hashtable<String, Product>();
 
     /** synchronizedMap :
      * Synchronization at Object level.
@@ -29,7 +29,7 @@ public class ProductServiceImpl implements ProductService{
      * It may cause contention.
      * SynchronizedHashMap returns Iterator, which fails-fast on concurrent modification.
      */
-    Map<Product, Product> synchronizedHashMap  = Collections.synchronizedMap(new HashMap<Product, Product>());
+    Map<String, Product> synchronizedHashMap  = Collections.synchronizedMap(new HashMap<String, Product>());
 
     /**ConcurrentHashMap :
      * You should use ConcurrentHashMap when you need very high concurrency in your project.
@@ -40,21 +40,59 @@ public class ProductServiceImpl implements ProductService{
      * ConcurrentHashMap doesn’t throw a ConcurrentModificationException if one thread tries to modify it while another is iterating over it.
      * ConcurrentHashMap uses multitude of locks.
      */
-    Map<Product, Product> concurrentHashMap = new ConcurrentHashMap<Product, Product>();
+    Map<String, Product> concurrentProductHashMap = new ConcurrentHashMap<String, Product>();
 
     private static final AtomicLong idGenerator = new AtomicLong(1);
 
-    private List<Product> searchProducts (Product searchCriteria){
-       List<Product> list = normalMap.keySet().stream()
-                .filter(f -> f.getName().equalsIgnoreCase("Ritchie"))
-                .collect(Collectors.toList());
-        return null;
-    }
 
-
+    /**
+     *
+     * @param product
+     * @throws InvalidDataException
+     */
     @Override
     public void createProduct(Product product) throws InvalidDataException {
+        validateProductData(product);
+        concurrentProductHashMap.put(product.getId(), product);
+    }
 
+    /**
+     * As the requirements are not clear about an update for the productId, we need to pass both params.
+     * If the productId is not allowed to change in time, we should create a createOrUpdateProduct method instead.
+     * @param previousProductId
+     * @param product
+     */
+    @Override
+    public void updateProduct(String previousProductId, Product product) throws InvalidDataException {
+        if (concurrentProductHashMap.containsKey(previousProductId) &&
+                (!previousProductId.equals(product.getId()))){
+            deleteProduct(previousProductId);
+        }
+        createProduct(product);
+    }
+
+    @Override
+    public Product deleteProduct(String id) {
+        return concurrentProductHashMap.remove(id);
+    }
+
+    @Override
+    public int getAvailableProducts() {
+        return concurrentProductHashMap.size();
+    }
+
+    @Override
+    public List<Product> searchProducts (Product searchCriteria){
+       List<Product> list = concurrentProductHashMap.values().stream()
+                .filter(p -> p.getId().equalsIgnoreCase(searchCriteria.getId()))
+                .filter(p -> p.getName().equalsIgnoreCase(searchCriteria.getName()))
+                .filter(p -> p.getDescription().equalsIgnoreCase(searchCriteria.getDescription()))
+                .collect(Collectors.toList());
+
+        return list;
+    }
+
+    private void validateProductData(Product product) throws InvalidDataException {
         if (ObjectUtils.isEmpty(product.getName())){
             throw new InvalidDataException("Product name is mandatory");
         }
@@ -62,22 +100,5 @@ public class ProductServiceImpl implements ProductService{
         if (ObjectUtils.isEmpty(product.getId())){
             product.setId(String.valueOf(idGenerator.getAndIncrement()));
         }
-        //Insert the product
-    }
-
-    @Override
-    public void updateProduct(String id, Product product) {
-        //TODO
-    }
-
-    @Override
-    public void deleteProduct(String id) {
-        //TODO
-    }
-
-    @Override
-    public Collection<Product> getProducts() {
-        //TODO
-        return null;
     }
 }
