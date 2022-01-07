@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,49 +21,33 @@ import java.util.Map;
 public class ProductController {
 
     @Autowired
-    private ProductService productService;
+    ProductService productService;
     @Autowired
     ApplicationEventPublisher publisher;
 
-    @GetMapping("/products")
-    public int getAvailableProducts() {
-        return productService.getAvailableProducts();
+    @PostMapping(value = "/product", consumes = "application/json")
+    public ResponseEntity <Product> createProduct(@RequestBody Product product) throws InvalidDataException {
+        Product createdProduct = productService.createProduct(product);
+        return ResponseEntity.ok(createdProduct);
     }
 
-    @GetMapping("/products/{id}")
-    public ResponseEntity < Product > getProductById(@PathVariable(value = "id") String productId) throws ResourceNotFoundException {
-        //TODO
-        return null;
-    }
-
-    @PostMapping("/products")
-    public Product createProduct(@RequestBody Product product) {
-        //TODO
-        return null;
-    }
-
-    /**
-     * Asynchronous method to create a product.
-     * @param product
-     * @return
-     */
-    @PostMapping(value = "/publish")
+    @PostMapping(value = "/product/publish")
     public String publishProduct(@RequestBody Product product) {
         ProductCreationEvent event = new ProductCreationEvent(this, product);
         publisher.publishEvent(event);
         return "Published the product :" + product.getId();
     }
 
-    @PutMapping("/products/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable(value = "id") String productId,
-                                                 @RequestBody Product productDetails) throws ResourceNotFoundException {
-        //TODO
-        return null;
+    @PutMapping("/product/{id}")
+    public ResponseEntity <Product> updateProduct(@PathVariable(value = "id") String productId,
+                                                  @RequestBody Product productDetails) throws InvalidDataException {
+        Product updatedProduct = productService.updateProduct(productId, productDetails);
+        return ResponseEntity.ok(updatedProduct);
     }
 
-    @DeleteMapping("/products/{id}")
+    @DeleteMapping("/product/{id}")
     public Map< String, Boolean > deleteProduct(@PathVariable(value = "id") String productId)
-                                                throws ResourceNotFoundException, InvalidDataException {
+            throws ResourceNotFoundException, InvalidDataException {
         if (ObjectUtils.isEmpty(productId)){
             throw new InvalidDataException("Can not delete a Product without a valid key");
         }
@@ -72,5 +58,20 @@ public class ProductController {
         Map < String, Boolean > response = new HashMap< >();
         response.put("deleted", Boolean.TRUE);
         return response;
+    }
+
+    @GetMapping("/products")
+    public int getAvailableProducts() {
+        return productService.getAvailableProducts();
+    }
+
+    @GetMapping("/products/all")
+    public Collection<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    @PostMapping("/product/search")
+    public List<Product> getFilteredProducts(@RequestBody Product searchCriteriaProduct) {
+        return productService.searchProducts(searchCriteriaProduct);
     }
 }
