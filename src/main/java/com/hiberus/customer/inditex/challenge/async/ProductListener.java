@@ -17,8 +17,8 @@ public class ProductListener {
     @Async
     @EventListener
     public void listener(ProductCreationEvent event) throws Exception {
-        Thread.sleep(2000);
-        //TODO : Call productService and create the product
+        System.out.println("Creating a product in async mode...");
+        Thread.sleep(1000);
         productService.createProduct(event.getProduct());
     }
 }

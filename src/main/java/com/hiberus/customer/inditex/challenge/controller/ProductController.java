@@ -7,14 +7,13 @@ import com.hiberus.customer.inditex.challenge.model.Product;
 import com.hiberus.customer.inditex.challenge.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -46,18 +45,17 @@ public class ProductController {
     }
 
     @DeleteMapping("/product/{id}")
-    public Map< String, Boolean > deleteProduct(@PathVariable(value = "id") String productId)
+    public ResponseEntity<Product> deleteProduct(@PathVariable(value = "id") String productId)
             throws ResourceNotFoundException, InvalidDataException {
         if (ObjectUtils.isEmpty(productId)){
             throw new InvalidDataException("Can not delete a Product without a valid key");
         }
-        if (productService.deleteProduct(productId) == null){
+        Product deletedProduct = productService.deleteProduct(productId);
+        if (deletedProduct == null){
             throw new ResourceNotFoundException("Product not found for this id :: "+ productId);
         }
 
-        Map < String, Boolean > response = new HashMap< >();
-        response.put("deleted", Boolean.TRUE);
-        return response;
+        return new ResponseEntity<>(deletedProduct, HttpStatus.OK);
     }
 
     @GetMapping("/products")
