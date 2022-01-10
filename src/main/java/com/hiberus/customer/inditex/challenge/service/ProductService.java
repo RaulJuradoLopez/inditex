@@ -13,4 +13,6 @@ public interface ProductService {
     int getAvailableProducts();
     Collection<Product> getAllProducts();
     List<Product> searchProducts(Product searchCriteria);
+    //For testing purposes
+    void flushElements();
 }

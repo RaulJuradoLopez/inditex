@@ -76,6 +76,10 @@ public class ProductServiceImpl implements ProductService{
                  .filter(completePredicate)
                  .collect(Collectors.toList());
     }
+    @Override
+    public void flushElements(){
+        concurrentProductHashMap.clear();
+    }
 
     private void validateProductData(Product product) throws InvalidDataException {
         if (ObjectUtils.isEmpty(product.getName())){
